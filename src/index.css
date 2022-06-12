@@ -5,9 +5,32 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #0B0B0B !important;
+  color: #fff !important;
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+::placeholder {
+  color: #fff !important;
+  opacity: 0.3 !important;
+}
+
+.bg-input {
+  background-color: rgba(210, 210, 210, 0.25) !important;
+  /* opacity: .25 !important; */
+  border: 2px solid #BCBCBC !important;
+}
+
+.card-img-product {
+  width: 215px;
+  height: 250px;
+}
+
+.card-img-detail {
+  width: 436px;
+  height: 555px;
 }
