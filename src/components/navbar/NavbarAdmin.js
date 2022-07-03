@@ -1,9 +1,21 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
+import React, { useContext } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 
 import LogoDumbmerch from '../../assets/images/LogoDumbmerch.png'
+import { UserContext } from '../../context/userContext'
 
 const NavbarAdmin = () => {
+    const [state, dispatch] = useContext(UserContext)
+
+    let navigate = useNavigate()
+
+    const logout = () => {
+        console.log(state)
+        dispatch({
+            type: "LOGOUT"
+        })
+        // navigate("/")
+    }
     return (
         <div>
             <nav className="navbar navbar-expand-lg navbar-dark">
@@ -22,7 +34,7 @@ const NavbarAdmin = () => {
                             <Link to="/complain-admin" className="nav-link ms-3 fs-5 fw-bolder text-white" aria-current="page">Complain</Link>
                             <Link to="/category" className="nav-link ms-3 fs-5 fw-bolder text-white">Category</Link>
                             <Link to="/product" className="nav-link ms-3 fs-5 fw-bolder text-white">Product</Link>
-                            <Link to="/" className="nav-link ms-3 fs-5 fw-bolder text-white">Logout</Link>
+                            <Link to="/" onClick={logout} className="nav-link ms-3 fs-5 fw-bolder text-white">Logout</Link>
                         </div>
                     </div>
                 </div>

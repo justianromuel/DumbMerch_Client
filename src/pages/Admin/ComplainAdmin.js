@@ -1,75 +1,107 @@
-import React from 'react'
+import React, { useState, useEffect, useContext } from 'react'
+import { Container, Row, Col } from 'react-bootstrap'
 
 import NavbarAdmin from '../../components/navbar/NavbarAdmin'
-import User1 from '../../assets/images/User1.png'
-import User2 from '../../assets/images/User2.png'
+// import User1 from '../../assets/images/User1.png'
+// import User2 from '../../assets/images/User2.png'
+import { UserContext } from '../../context/userContext'
+import Contact from '../../components/complain/Contact'
+import Chat from '../../components/complain/Chat'
 
+// import socket.io-client 
+import { io } from 'socket.io-client'
+
+// initial variable outside socket
+let socket
 const ComplainAdmin = () => {
+    const title = "Complain Admin"
+    document.title = 'DumbMerch | ' + title
+
+    const [contact, setContact] = useState(null)
+    const [contacts, setContacts] = useState([])
+    const [messages, setMessages] = useState([])
+    const [state] = useContext(UserContext)
+
+    useEffect(() => {
+        socket = io('http://localhost:5000', {
+            auth: {
+                token: localStorage.getItem('token')
+            }
+        })
+
+        socket.on("new message", () => {
+            socket.emit('load messages', contact?.id)
+        })
+
+        loadContacts()
+        loadMessages()
+
+        return () => {
+            socket.disconnect()
+        }
+    }, [messages])
+
+    const loadContacts = () => {
+        socket.emit("load customer contacts")
+        socket.on("customer contacts", (data) => {
+            // filter just customers which have sent a message
+            let dataContacts = data.map((item) => ({
+                ...item,
+                message: item.senderMessage.length > 0 ? item.senderMessage[item.senderMessage.length - 1].message : 'Click here to start message'
+            }))
+
+            // manipulate customers to add message property with the newest message
+            setContacts(dataContacts)
+        })
+    }
+
+    // used for active style when click contact
+    const onClickContact = (data) => {
+        setContact(data)
+        socket.emit('load messages', data.id)
+    }
+
+    const loadMessages = () => {
+        socket.on('messages', async (data) => {
+            if (data.length > 0) {
+                const dataMessages = data.map((item) => ({
+                    idSender: item.sender.id,
+                    message: item.message
+                }))
+                setMessages(dataMessages)
+                loadContacts()
+            } else {
+                setMessages([])
+                loadContacts()
+            }
+        })
+    }
+
+    const onSendMessage = (e) => {
+        if (e.key == "Enter") {
+            const data = {
+                idRecipient: contact.id,
+                message: e.target.value
+            }
+
+            socket.emit('send message', data)
+            e.target.value = ''
+        }
+    }
+
     return (
         <>
             <NavbarAdmin />
-            <div className="container mt-5 text-white">
-                <div className="row">
-                    <div className="col-4 d-flex">
-                        <div>
-                            <div className="d-flex">
-                                <img
-                                    className="me-3 rounded-circle"
-                                    src={User1}
-                                    alt="user1"
-                                    height={"50px"}
-                                />
-                                <div>
-                                    <p className="px-0 mb-2">Justian</p>
-                                    <p>Hello Admin, I Need Your Help</p>
-                                </div>
-                            </div>
-                            <div className="d-flex mt-4">
-                                <img
-                                    className="me-3 rounded-circle"
-                                    src={User2}
-                                    alt="user2"
-                                    height={"50px"}
-                                />
-                                <div>
-                                    <p className="px-0 mb-2">beach_lover</p>
-                                    <p>Hello Admin, This Problem Product to Me</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div
-                            className="d-flex ms-auto"
-                            style={{ height: "600px" }}
-                        >
-                            <div class="vr"></div>
-                        </div>
-                    </div>
-                    <div className="col-8 d-flex flex-column justify-content-end">
-                        <div className="d-flex ms-3">
-                            <img
-                                className="me-3 rounded-circle"
-                                src={User1}
-                                alt="user1"
-                                height={"50px"}
-                            />
-                            <div className="d-flex">
-                                <p className="bg-dark p-3 rounded-pill">
-                                    Hello Admin, I Need Your Help
-                                </p>
-                            </div>
-                        </div>
-                        <div className="d-flex ms-4 mt-4">
-                            <input
-                                type="text"
-                                className="form-control mb-4 p-3 bg-input text-white"
-                                id="formGroupExampleInput"
-                                placeholder="Send Message"
-                                style={{ border: "none" }}
-                            />
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <Container fluid style={{ height: '89.5vh' }}>
+                <Row>
+                    <Col md={3} style={{ height: '89.5vh' }} className="px-3 border-end border-dark overflow-auto">
+                        <Contact dataContact={contacts} clickContact={onClickContact} contact={contact} />
+                    </Col>
+                    <Col md={9} style={{ height: '89.5vh' }} className="px-3 border-end border-dark overflow-auto">
+                        <Chat contact={contact} messages={messages} user={state.user} sendMessage={onSendMessage} />
+                    </Col>
+                </Row>
+            </Container>
         </>
     )
 }

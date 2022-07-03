@@ -1,39 +1,100 @@
-import React, { useState } from 'react'
+import React, { useContext, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useMutation } from 'react-query'
+import { Alert } from 'react-bootstrap'
+
+import { UserContext } from '../../context/userContext'
+import { API } from '../../config/api'
 
 const FormRegister = () => {
-    const [register, setRegister] = useState({
-        name: "",
-        email: "",
-        password: ""
+    const title = 'Register'
+    document.title = 'DumbMerch | ' + title
+
+    let navigate = useNavigate()
+
+    const [state, dispatch] = useContext(UserContext)
+    const [message, setMessage] = useState(null)
+    // Create variabel for store data with useState here ...
+    const [form, setForm] = useState({
+        name: '',
+        email: '',
+        password: ''
     })
 
-    const handleOnChange = (e) => {
-        setRegister({
-            ...register,
+    const { name, email, password } = form
+
+    const handleChange = (e) => {
+        setForm({
+            ...form,
             [e.target.name]: e.target.value
         })
     }
 
-    function handleFormSubmit(e) {
-        e.preventDefault();
+    // Create function for handle insert data process with useMutation here ...
+    const handleSubmit = useMutation(async (e) => {
+        try {
+            e.preventDefault()
 
-        localStorage.setItem("dataUser", JSON.stringify(register));
-        console.log("Register Success");
-    }
+            // Configuration Content-type
+            const config = {
+                headers: {
+                    'Content-type': 'application/json',
+                }
+            }
+
+            // Data body
+            const body = JSON.stringify(form)
+
+            // Insert data user to database
+            const response = await API.post('/register', body, config)
+            // console.log(response)
+
+            // Notification
+            if (response.data.status === "success") {
+                const alert = (
+                    <Alert variant="success" className="py-1">
+                        Register Success
+                    </Alert>
+                )
+                setMessage(alert)
+                setForm({
+                    name: '',
+                    email: '',
+                    password: '',
+                })
+            } else {
+                const alert = (
+                    <Alert variant="danger" className="py-1">
+                        {response.data.message}
+                    </Alert>
+                )
+                setMessage(alert)
+            }
+        } catch (error) {
+            const alert = (
+                <Alert variant="danger" className="py-1">
+                    Register Failed
+                </Alert>
+            )
+            setMessage(alert)
+            console.log(error)
+        }
+    })
 
     return (
         <div className="d-flex align-items-center">
             <div className="col-md-8 mx-auto bg-secondary bg-opacity-10 rounded">
-                <form onSubmit={handleFormSubmit} className='p-4'>
+                <form onSubmit={(e) => handleSubmit.mutate(e)} className='p-4'>
                     <h2 className='mb-4 fw-bolder text-white'>Register</h2>
+                    {message && message}
                     <div className="mb-3">
                         <input
                             type="text"
                             name="name"
                             placeholder='Name'
                             className="form-control bg-input text-white"
-                            onChange={handleOnChange}
-                            value={register.name}
+                            onChange={handleChange}
+                            value={name}
                             required
                         />
                     </div>
@@ -43,8 +104,8 @@ const FormRegister = () => {
                             name="email"
                             placeholder='Email'
                             className="form-control bg-input text-white"
-                            onChange={handleOnChange}
-                            value={register.email}
+                            onChange={handleChange}
+                            value={email}
                             required
                         />
                     </div>
@@ -54,8 +115,8 @@ const FormRegister = () => {
                             name="password"
                             placeholder='Password'
                             className="form-control bg-input text-white"
-                            onChange={handleOnChange}
-                            value={register.password}
+                            onChange={handleChange}
+                            value={password}
                             required
                         />
                     </div>

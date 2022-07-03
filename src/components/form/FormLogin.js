@@ -1,48 +1,116 @@
-import React, { useState } from 'react'
-import { useNavigate } from "react-router-dom"
+import React, { useContext, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useMutation } from 'react-query'
+import { Alert } from 'react-bootstrap'
+
+import { UserContext } from '../../context/userContext'
+import { API } from '../../config/api'
 
 const FormLogin = () => {
-    const navigate = useNavigate();
+    const title = 'Login'
+    document.title = 'DumbMerch | ' + title
 
-    const [emaillog, setEmaillog] = useState(" ");
-    const [passwordlog, setPasswordlog] = useState(" ");
+    let navigate = useNavigate()
 
-    const handleLogin = (e) => {
-        e.preventDefault();
+    const [state, dispatch] = useContext(UserContext)
+    const [message, setMessage] = useState(null)
+    // Create variabel for store data with useState here ...
+    const [form, setForm] = useState({
+        email: '',
+        password: '',
+    })
 
-        let data = localStorage.getItem("dataUser");
-        let dataLogin = JSON.parse(data);
+    const { email, password } = form
 
-        if (emaillog === dataLogin.email && passwordlog === dataLogin.password) {
-            navigate("/home");
-            console.log("Login Success");
-        }
+    const handleChange = (e) => {
+        setForm({
+            ...form,
+            [e.target.name]: e.target.value
+        })
     }
 
+    // Create function for handle insert data process with useMutation here ...
+    const handleSubmit = useMutation(async (e) => {
+        try {
+            e.preventDefault()
+
+            // Configuration Content-type
+            const config = {
+                headers: {
+                    'Content-type': 'application/json',
+                }
+            }
+
+            // Data body
+            let body = JSON.stringify(form)
+
+            // Insert data user to database
+            const response = await API.post('/login', body, config)
+            // console.log(response)
+
+            // Checking process
+            if (response?.status === 200) {
+                // Send data to useContext
+                // console.log('send LOGIN_SUCCESS');
+                dispatch({
+                    type: 'LOGIN_SUCCESS',
+                    payload: response.data.data.user
+                })
+
+                // Status check
+                if (response.data.data.user.status === 'admin') {
+                    navigate('/complain-admin')
+                } else {
+                    navigate('/home')
+                }
+
+                const alert = (
+                    <Alert variant='success' className='py-1'>
+                        Login success
+                    </Alert>
+                )
+                setMessage(alert)
+            }
+        } catch (error) {
+            const alert = (
+                <Alert variant='danger' className='py-1'>
+                    Login Failed
+                </Alert>
+            )
+            setMessage(alert)
+            console.log(error)
+        }
+    })
+
     return (
-        <div className="d-flex align-items-center">
-            <div className="col-md-8 mx-auto bg-secondary bg-opacity-10 rounded">
-                <form onSubmit={handleLogin} className='p-4'>
+        <div className='d-flex align-items-center'>
+            <div className='col-md-8 mx-auto bg-secondary bg-opacity-10 rounded'>
+                <form onSubmit={(e) => handleSubmit.mutate(e)} className='p-4'>
                     <h2 className='mb-4 fw-bolder text-white'>Login</h2>
-                    <div className="mb-3">
+                    {message && message}
+                    <div className='mb-3'>
                         <input
-                            type="email"
-                            className="form-control bg-input text-white"
+                            type='email'
+                            className='form-control bg-input text-white'
                             placeholder='Email'
-                            onChange={(e) => setEmaillog(e.target.value)}
+                            value={email}
+                            name='email'
+                            onChange={handleChange}
                         />
                     </div>
-                    <div className="mb-3">
+                    <div className='mb-3'>
                         <input
-                            type="password"
-                            className="form-control bg-input text-white"
+                            type='password'
+                            className='form-control bg-input text-white'
                             placeholder='Password'
-                            onChange={(e) => setPasswordlog(e.target.value)}
+                            value={password}
+                            name='password'
+                            onChange={handleChange}
                         />
                     </div>
                     <button
-                        type="submit"
-                        className="btn btn-danger col-12 fs-6 fw-bold"
+                        type='submit'
+                        className='btn btn-danger col-12 fs-6 fw-bold'
                     >
                         Login
                     </button>

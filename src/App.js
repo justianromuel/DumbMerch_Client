@@ -1,5 +1,5 @@
-import React from 'react'
-import { Route, Routes } from 'react-router-dom'
+import React, { useContext, useEffect } from 'react'
+import { Route, Routes, useNavigate } from 'react-router-dom'
 
 import Auth from './pages/Auth'
 
@@ -19,7 +19,68 @@ import ComplainAdmin from './pages/Admin/ComplainAdmin'
 
 import PrivateRoute from './components/route/PrivateRoute'
 
+import { UserContext } from './context/userContext'
+// Init token on axios every time the app is refreshed
+import { API, setAuthToken } from "./config/api"
+
+if (localStorage.token) {
+  setAuthToken(localStorage.token)
+}
+
 function App() {
+  let navigate = useNavigate()
+  // Init user context
+  const [state, dispatch] = useContext(UserContext)
+  // console.clear()
+  console.log(state)
+
+  useEffect(() => {
+    if (localStorage.token) {
+      setAuthToken(localStorage.token)
+    }
+    // Redirect Auth
+    if (state.isLogin === false) {
+      navigate('/')
+    } else {
+      if (state.user.status === 'admin') {
+        navigate('/complain-admin')
+      } else if (state.user.status === 'customer') {
+        navigate('/home')
+      }
+    }
+  }, [state])
+
+  const checkAuth = async () => {
+    try {
+      const response = await API.get('/check-auth')
+      console.log('response:', response);
+
+      // If the token incorrect
+      if (response.status === 404) {
+        return dispatch({
+          type: 'AUTH_ERROR',
+        })
+      }
+      // Get user data
+      let payload = response.data.data.user
+      // console.log('payload:', payload);
+      // Get token from local storage
+      payload.token = localStorage.token
+
+      // Send data to useContext
+      dispatch({
+        type: 'USER_SUCCESS',
+        payload,
+      })
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  useEffect(() => {
+    checkAuth()
+  }, [])
+
   return (
     <Routes>
       {/* Login-Register */}

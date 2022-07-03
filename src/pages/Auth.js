@@ -1,12 +1,29 @@
-import React, { useState } from 'react'
+import React, { useContext, useState } from 'react'
 import { Container, Row, Col } from 'react-bootstrap'
+import { useNavigate } from 'react-router-dom'
 
 import FormRegister from '../components/form/FormRegister'
 import FormLogin from '../components/form/FormLogin'
 
 import ImageDumbmerch from '../assets/images/ImageDumbmerch.png'
+import { UserContext } from '../context/userContext'
 
 const Auth = () => {
+    let navigate = useNavigate()
+
+    const [state] = useContext(UserContext)
+    // console.log('cek state', state);
+    const checkAuth = () => {
+        if (state.isLogin === true) {
+            if (state.user.status === 'admin') {
+                navigate("/complain-admin");
+            } else {
+                navigate('/home')
+            }
+        }
+    }
+    checkAuth()
+
     const [isRegister, setIsRegister] = useState(false)
 
     const switchLogin = () => {
